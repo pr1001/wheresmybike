@@ -51,7 +51,6 @@ _.extend(Store.prototype, {
     this.save();
     return model;
   }
-
 });
 
 // Override Backbone.sync to use delegate to the model or collection's localStorage property, which should be an instance of Store.

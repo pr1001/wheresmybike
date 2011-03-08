@@ -45,6 +45,60 @@ $(function(){
   }
 
   /*
+  Address
+  - lat
+  - long
+  - street
+  - address
+  - extra
+  - city
+  - country
+  - postcode
+  */
+  WMB.createModel('address', {
+    'defaults': {
+      'lat': 0.0,
+      'long': 0.0,
+      'street': "",
+      'address': "",
+      'extra': "",
+      'city': "",
+      'country': "",
+      'postcode': ""
+    }
+  });
+  // make an alias with the correct plural form
+  WMB.Addresses = WMB.Addresss;
+
+  /*
+  Person
+  - name
+  - address
+  - mobile number
+  - email address
+  */
+  WMB.createModel('person', {
+    'defaults': {
+      'name': "",
+      'mobile': "",
+      'email': ""
+    },
+    setAddress: function setAddress(address) {
+      this.set({address_id: address.get("id")});
+      this.save();
+    },
+    address: function address() {
+      return WMB.Addresses.get(this.get("address_id"));
+    }
+  });
+  // make an alias with the correct plural form
+  WMB.People = WMB.Persons;
+  // and an alias for the user
+  WMB.user = function user() {
+    return WMB.People.at(0);
+  };
+
+  /*
   Lock
   - manufactuer
   - model
@@ -60,6 +114,7 @@ $(function(){
       return WMB.Bikes.get(this.get("bike_id"));
     }
   });
+  
   /*
   Bike
   - manufacturer
@@ -76,7 +131,6 @@ $(function(){
   WMB.createModel('bike', {
     initialize: function() {
       this.localStorage = new Store(this.name);
-      // this is crazy
       var id = this.get("id");
       // synthetic property
       this.locks = function() {
@@ -89,6 +143,19 @@ $(function(){
       lock.set({bike_id: this.get("id")});
       lock.save();
     },
+    locks: function locks() {
+      var id = this.get("id");
+      return WMB.Locks.filter(function(lock) {
+        return lock.get("bike_id") == id;
+      });
+    },
+    setAddress: function setAddress(address) {
+      this.set({address_id: address.get("id")});
+      this.save();
+    },
+    address: function address() {
+      return WMB.Addresses.get(this.get("address_id"));
+    },
     'defaults': {
       'manufacturer': '',
       'model': '',
@@ -100,61 +167,150 @@ $(function(){
       'tag': '',
       'insurance': ''
        // photos
-  }});  
+  }});
+  
+  /*
+  Incident Report
+  - time
+  - address
+  - bike
+  - description
+  - photo
+  - procesverbaalnummer (police case number)
+  */
+  WMB.createModel('incident', {
+    'defaults': {
+      'time': new Date(),
+      'description': "",
+      'case': ""
+    },
+    setAddress: function setAddress(address) {
+      this.set({address_id: address.get("id")});
+      this.save();
+    },
+    address: function address() {
+      return WMB.Addresses.get(this.get("address_id"));
+    },
+    setBike: function setBike(bike) {
+      this.set({bike_id: bike.get("id")});
+      this.save();
+    },
+    bike: function bike() {
+      return WMB.Bikes.get(this.get("bike_id"));
+    },
+    parse: function parse(response) {
+      // recreate the Date object
+      response.time = new Date(response.time);
+      return response;
+    }
+  }, {
+    parse: function parse(response) {
+      return _.map(response, function(incident) {
+        return WMB.Incident.prototype.parse(incident);
+      });
+    }
+  });
+
+  /*
+  City Bike Parking
+  - name
+  - address
+  - url
+  // http://www.amsterdam.nl/parkeren-verkeer/fiets/fietspuntstallingen/
+  // in additional to the guarded ones should also at least have Centraal Station
+  // info@ivv.amsterdam.nl
+  */  
+  WMB.createModel('parking', {
+    'defaults': {
+      'name': "",
+      'description': "",
+      'url': "",
+      'totalplaces': 0,
+      'lastparked': new Date()
+    },
+    setAddress: function setAddress(address) {
+      this.set({address_id: address.get("id")});
+      this.save();
+    },
+    address: function address() {
+      return WMB.Addresses.get(this.get("address_id"));
+    },
+    setBike: function setBike(bike) {
+      this.set({bike_id: bike.get("id")});
+      this.save();
+    },
+    bike: function bike() {
+      return WMB.Bikes.get(this.get("bike_id"));
+    },
+    parse: function parse(response) {
+      // recreate the Date object
+      response.lastparked = new Date(response.lastparked);
+      return response;
+    }
+  }, {
+    parse: function parse(response) {
+      return _.map(response, function(parking) {
+        return WMB.Parking.prototype.parse(parking);
+      });
+    }
+  });
+
+  /*
+  Bike Rental
+  - name
+  - address
+  - url
+  */  
+  WMB.createModel('rental', {
+    'defaults': {
+      'name': "",
+      'description': "",
+      'url': "",
+    },
+    setAddress: function setAddress(address) {
+      this.set({address_id: address.get("id")});
+      this.save();
+    },
+    address: function address() {
+      return WMB.Addresses.get(this.get("address_id"));
+    }
+  });
+  
+  /*
+  Engraving Times
+  - address // parse strings like "Javaplein, naast het Badhuis" and "Museumplein, naast de AH ingang" and "Haarlemmerstraat, op de Eenhoornsluis" and "Gulden Winckelplantsoen, bij de KFC"
+  - starttime
+  - endtime
+  */
+  WMB.createModel('engraving', {
+    'defaults': {
+      'starttime': new Date(),
+      'endtime': new Date(),
+      'description': "",
+    },
+    setAddress: function setAddress(address) {
+      this.set({address_id: address.get("id")});
+      this.save();
+    },
+    address: function address() {
+      return WMB.Addresses.get(this.get("address_id"));
+    },
+    parse: function parse(response) {
+      // recreate the Date object
+      response.starttime = new Date(response.starttime);
+      response.endtime = new Date(response.endtime);
+      return response;
+    }
+    // function isNow(): Boolean
+  }, {
+    parse: function parse(response) {
+      return _.map(response, function(engraving) {
+        return WMB.Incident.prototype.parse(engraving);
+      });
+    }
+  });
 })
 
-/*
-Person
-- name
-- address
-- mobile number
-- email address
-*/
-
-/*
-Address
-- lat
-- long
-- street
-- address
-- extra
-- city
-- country
-- postcode
-*/
-
-/*
-Incident Report
-- time
-- address
-- bike
-- description
-- photo
-- procesverbaalnummer (police case number)
-*/
-
-/*
-City Bike Parking
-- name
-- address
-// http://www.amsterdam.nl/parkeren-verkeer/fiets/fietspuntstallingen/
-// in additional to the guarded ones should also at least have Centraal Station
-// info@ivv.amsterdam.nl
-*/
-
-/*
-Bike Rental
-- name
-- address
-- url
-*/
-
-/*
-Engraving Times
-- address // parse strings like "Javaplein, naast het Badhuis" and "Museumplein, naast de AH ingang" and "Haarlemmerstraat, op de Eenhoornsluis" and "Gulden Winckelplantsoen, bij de KFC"
-- starttime
-- endtime
-*/
 // http://www.afac-amsterdam.nl/agenda/agenda.lhtml
 // they're planned through the end of 2011 but there little benefit for having the information more than a week ahead
 // maybe manually set the whole year and then only download the most recent week? but what if something is rescheduled?
@@ -167,6 +323,9 @@ Engraving Times
 // continue
 // Diefstal of inbraak
 // Geen van beide (In of op een voer-/ vaartuig?)
+
+// information on reporting a stolen bike: http://www.politie-amsterdam-amstelland.nl/get.cfm?id=5288
+// register bike with the police: http://www.politie-amsterdam-amstelland.nl/get.cfm?id=491
 
 // http://www.fietsersbondamsterdam.nl/
 
