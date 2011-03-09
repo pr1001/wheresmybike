@@ -21,7 +21,6 @@ $(function(){
     }
   });
   WMB.BaseCollection = Backbone.Collection.extend({
-    // Save all of the bike items under the "bikes" namespace.
     initialize: function() {
       this.localStorage = new Store(this.name);
     }
@@ -35,7 +34,7 @@ $(function(){
     // create the Collection of the Model
     var updated = collectionObj ? collectionObj : {};
     updated.model = WMB[modelName];
-    updated.name = name + "s";
+    updated.name = name; // name + "s"; // don't use plural names for the collection data store so that it can use the same as the Model
     var collectionName = modelName + "Collection";
     WMB[collectionName] = WMB.BaseCollection.extend(updated);
     // create an instanciation of the Collection
@@ -86,6 +85,7 @@ $(function(){
     setAddress: function setAddress(address) {
       this.set({address_id: address.get("id")});
       this.save();
+      WMB.Checkin.now(address);
     },
     address: function address() {
       return WMB.Addresses.get(this.get("address_id"));
@@ -130,7 +130,11 @@ $(function(){
   */
   WMB.createModel('bike', {
     initialize: function() {
-      this.localStorage = new Store(this.name);
+      // standard init stuff every model needs
+      var modelName = this.name.charAt(0).toLocaleUpperCase() + this.name.substring(1).toLocaleLowerCase();
+      var pluralName = modelName + "s";
+      this.collection = WMB[pluralName];
+      
       var id = this.get("id");
       // synthetic property
       this.locks = function() {
@@ -152,6 +156,7 @@ $(function(){
     setAddress: function setAddress(address) {
       this.set({address_id: address.get("id")});
       this.save();
+      WB.Checkin.now(address, this);
     },
     address: function address() {
       return WMB.Addresses.get(this.get("address_id"));
@@ -159,7 +164,7 @@ $(function(){
     'defaults': {
       'manufacturer': '',
       'model': '',
-      'year': (new Date().getFullYear()),
+      'year': (new Date().getFullYear()), // NB: This is only executed once, when the file is loaded.
       'color': '',
       // locks
       'frame': '',
@@ -180,9 +185,18 @@ $(function(){
   */
   WMB.createModel('incident', {
     'defaults': {
-      'time': new Date(),
+      // 'time': new Date(),
       'description': "",
       'case': ""
+    },
+    initialize: function initialize() {
+      var modelName = this.name.charAt(0).toLocaleUpperCase() + this.name.substring(1).toLocaleLowerCase();
+      var pluralName = modelName + "s";
+      this.collection = WMB[pluralName];
+
+      if (!this.get('time')) {
+        this.set({time: new Date});
+      }
     },
     setAddress: function setAddress(address) {
       this.set({address_id: address.get("id")});
@@ -226,7 +240,16 @@ $(function(){
       'description': "",
       'url': "",
       'totalplaces': 0,
-      'lastparked': new Date()
+      // 'lastparked': new Date()
+    },
+    initialize: function initialize() {
+      var modelName = this.name.charAt(0).toLocaleUpperCase() + this.name.substring(1).toLocaleLowerCase();
+      var pluralName = modelName + "s";
+      this.collection = WMB[pluralName];
+
+      if (!this.get('lastparked')) {
+        this.set({lastparked: new Date});
+      }
     },
     setAddress: function setAddress(address) {
       this.set({address_id: address.get("id")});
@@ -238,6 +261,7 @@ $(function(){
     setBike: function setBike(bike) {
       this.set({bike_id: bike.get("id")});
       this.save();
+      WMB.Checkin.now(this.address(), bike);
     },
     bike: function bike() {
       return WMB.Bikes.get(this.get("bike_id"));
@@ -284,9 +308,21 @@ $(function(){
   */
   WMB.createModel('engraving', {
     'defaults': {
-      'starttime': new Date(),
-      'endtime': new Date(),
+      // 'starttime': new Date(),
+      // 'endtime': new Date(),
       'description': "",
+    },
+    initialize: function initialize() {
+      var modelName = this.name.charAt(0).toLocaleUpperCase() + this.name.substring(1).toLocaleLowerCase();
+      var pluralName = modelName + "s";
+      this.collection = WMB[pluralName];
+      
+      if (!this.get('starttime')) {
+        this.set({starttime: new Date});
+      }
+      if (!this.get('endtime')) {
+        this.set({endtime: new Date});
+      }
     },
     setAddress: function setAddress(address) {
       this.set({address_id: address.get("id")});
@@ -309,6 +345,64 @@ $(function(){
       });
     }
   });
+  
+  WMB.createModel('checkin', {
+    'defaults': {
+      // 'time': new Date(),
+      'description': ""
+    },
+    initialize: function initialize() {
+      var modelName = this.name.charAt(0).toLocaleUpperCase() + this.name.substring(1).toLocaleLowerCase();
+      var pluralName = modelName + "s";
+      this.collection = WMB[pluralName];
+      
+      if (!this.get('time')) {
+        this.set({time: new Date});
+      }
+    },
+    setAddress: function setAddress(address) {
+      this.set({address_id: address.get("id")});
+      this.save();
+    },
+    address: function address() {
+      return WMB.Addresses.get(this.get("address_id"));
+    },
+    parse: function parse(response) {
+      // recreate the Date object
+      response.time = new Date(response.time);
+      return response;
+    }
+    // function isNow(): Boolean
+  }, {
+    parse: function parse(response) {
+      return _.map(response, function(checkin) {
+        return WMB.Checkin.prototype.parse(checkin);
+      });
+    },
+    comparator: function comparator(checkin) {
+      // sort from newest to oldest
+      return -checkin.get('time');
+    }
+  });
+  // helper function
+  WMB.Checkin.now = function now(address, bike, description) {
+    // don't create a checkin if we don't have an address
+    if (!address) {
+      return;
+    }
+    var checkin = new WMB.Checkin;
+    var vals = {};
+    if (bike) {
+      vals.bike_id = bike.get("id");
+    }
+    if (description) {
+      vals.description = description;
+    }
+    checkin.set(vals);
+    // don't need to save because setAddress already does
+    checkin.setAddress(address);
+    return checkin;
+  }
 })
 
 // http://www.afac-amsterdam.nl/agenda/agenda.lhtml
