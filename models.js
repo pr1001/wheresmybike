@@ -2,12 +2,28 @@ var WMB = WMB ? WMB : {};
 
 // Load the application once the DOM is ready, using jQuery.ready:
 $(function(){
+  // helper
+  WMB.capitalize = function capitalize(str) {
+    return str.charAt(0).toLocaleUpperCase() + str.substring(1).toLocaleLowerCase();
+  }
+  
   // Base Mode, with collection syncing
   WMB.BaseModel = Backbone.Model.extend({
     initialize: function() {
-      var modelName = this.name.charAt(0).toLocaleUpperCase() + this.name.substring(1).toLocaleLowerCase();
+      var modelName = WMB.capitalize(this.name);
       var pluralName = modelName + "s";
       this.collection = WMB[pluralName];
+      // make a view
+      var rowViewName = modelName + 'Row';
+      this.view = new WMB[rowViewName]({
+        model: this,
+        id: this.name + '-row-' + this.id
+      });
+      var saveViewName = modelName + 'Save';
+      this.saveView = new WMB[saveViewName]({
+        model: this,
+        id: this.name + '-save-' + this.id
+      });
     },
     // Remove this Bike from localStorage and delete its view.
     clear: function() {
@@ -18,16 +34,196 @@ $(function(){
       Backbone.Model.prototype.save.call(this, attributes, options);
       // keep the collection up to date
       this.collection.fetch();
+      // update its view if it has one
+      if (this.view && typeof(this.view.render) == 'function') {
+        this.view.render();
+      }
     }
   });
   WMB.BaseCollection = Backbone.Collection.extend({
+      initialize: function() {
+        this.localStorage = new Store(this.name);
+        var modelName = WMB.capitalize(this.name);
+        var listViewName = modelName + 'List';
+        this.view = new WMB[listViewName]({
+          model: this,
+          id: this.name + '-list-' + guid()
+        });
+      },
+      fetch: function fetch(options) {
+        Backbone.Collection.prototype.fetch.call(this, options);
+        // if we have a view, add the Collection Models to it
+        var view = this.view;
+        if (view) {
+          // update the view with the fetched data
+          this.each(function (m) {
+            if (m.view) {
+              view.el.appendChild(m.view.el);
+            }
+          });
+          view.render();
+        }
+      }
+    });
+    
+  WMB.BaseViewRow = Backbone.View.extend({
+    events: {
+      "click .icon":          "open",
+      "click .button.edit":   "openEditDialog",
+      "click .button.delete": "destroy",
+      "dblclick": "edit"
+    },
+    edit: function() {
+      console.log("editing row because we double clicked")
+    },
     initialize: function() {
-      this.localStorage = new Store(this.name);
+      _.bindAll(this, "render");
+      // make sure our view is rendered right away
+      this.render();
+    },
+    render: function() {
+      //  ...
+      $(this.el).html(JSON.stringify(this.model.toJSON()));
+      return this;
     }
   });
-  WMB.createModel = function createModel(name, modelObj, collectionObj) {
+  WMB.BaseViewList = Backbone.View.extend({
+    events: {
+      "click .icon":          "open",
+      "click .button.edit":   "openEditDialog",
+      "click .button.delete": "destroy",
+      "dblclick": "edit"
+    },
+    edit: function() {
+      console.log("editing list because we double clicked")
+    },
+    initialize: function() {
+      _.bindAll(this, "render");
+      // make sure our view is rendered right away
+      this.render();
+    },
+    render: function() {
+      // update all the members
+      this.model.each(function (m) {
+        if (m.view){
+          m.view.render();
+        }
+      });
+      // $(this.el).html(str);
+      return this;
+    }
+  });
+  
+  WMB.BaseViewSave = Backbone.View.extend({
+    events: {
+      "submit form": "save"
+    },
+    initialize: function() {
+      _.bindAll(this, "render");
+      this.render();
+    },
+    render: function() {
+      // var out = '<form>';
+      // out += "<label for='title'>Title</label>";
+      // out += "<input name='title' type='text' />";
+      // out += "<label for='body'>Body</label>";
+      // out += "<textarea name='body'>" + (this.model.escape('body') || '') + "</textarea>";
+      // var submitText = this.model.isNew() ? 'Create' : 'Save';
+      // out += "<button>" + submitText + "</button>";
+      // out += "</form>";
+      
+      var form = document.createElement('form');
+      form.setAttribute('onsubmit', 'return false;');
+      var model = this.model;
+      _.each(_.keys(model.attributes), function(attr) {
+        if (attr != 'id' && attr != 'cid') {
+          var label = document.createElement('label');
+          label.setAttribute('for', attr);
+          label.appendChild(document.createTextNode(WMB.capitalize(attr)));
+          form.appendChild(label);
+          var input = document.createElement('input');
+          input.setAttribute('name', attr);
+          input.setAttribute('type', 'text');
+          input.setAttribute('value', model.get(attr));
+          form.appendChild(input);
+        }
+      });
+      var submit = document.createElement('input');
+      submit.setAttribute('type', 'submit');
+      form.appendChild(submit);
+      
+      var oldForm = $('form', this.el)[0];
+      if (this.el.children.length && oldForm){
+        this.el.replaceChild(oldForm, form);
+      } else {
+        this.el.appendChild(form);
+      }
+      
+      // $('#app').html(this.el);
+      this.$('[name=title]').val(this.model.get('title')); // use val, for security reasons
+    },
+    save: function() {
+      var self = this;
+      var isNew = this.model.isNew();
+      var msg = isNew ? 'Successfully created!' : "Saved!";      
+      // get all the inputs into an array.
+      var values = {};
+      $('form input', this.el).each(function(i, field) {
+        values[field.name] = field.value;
+      });
+      this.model.save(values, {
+          success: function(model, resp) {
+            console.log("model saved")
+            self.model = model;
+            self.render();
+            self.delegateEvents();
+            // Backbone.history.saveLocation('documents/' + model.id);
+            
+            // replace this.el with the RowView el?
+            // if we just created a new
+            // if (isNew && )
+            // this.el
+          },
+          error: function() {
+            console.log("unable to save model");
+            // new App.Views.Error();
+          }
+      });
+      return false;
+    }
+  });
+  
+  WMB.createModel = function createModel(name, modelObj, collectionObj, rowViewObj, listViewObj, saveViewObj) {
+    var modelName = WMB.capitalize(name);
+    
+    // create the view first so the model's constructor can attach an instance to itself
+    var rowViewName = modelName + 'Row';
+    rowViewObj = rowViewObj ? rowViewObj : {};
+    rowViewObj.name = name;
+    rowViewObj.className = name + '-row';
+    rowViewObj.tagName = rowViewObj.tagName ? rowViewObj.tagName : 'li';
+    // rowViewObj.tagName = 'li';
+    WMB[rowViewName] = WMB.BaseViewRow.extend(rowViewObj);
+    
+    // create the view first so the model's constructor can attach an instance to itself
+    var saveViewName = modelName + 'Save';
+    saveViewObj = saveViewObj ? saveViewObj : {};
+    saveViewObj.name = name;
+    saveViewObj.className = name + '-save';
+    saveViewObj.tagName = saveViewObj.tagName ? saveViewObj.tagName : 'div';
+    // rowViewObj.tagName = 'li';
+    WMB[saveViewName] = WMB.BaseViewSave.extend(saveViewObj);
+    
+    // create the view first so the model's constructor can attach an instance to itself
+    var listViewName = modelName + 'List';
+    listViewObj = listViewObj ? listViewObj : {};
+    listViewObj.name = name;
+    listViewObj.className = name + '-list';
+    listViewObj.tagName = listViewObj.tagName ? listViewObj.tagName : 'ul';
+    // listViewObj.tagName = 'li';
+    WMB[listViewName] = WMB.BaseViewList.extend(listViewObj);
+    
     // create the Model
-    var modelName = name.charAt(0).toLocaleUpperCase() + name.substring(1).toLocaleLowerCase();
     modelObj = modelObj ? modelObj : {};
     modelObj.name = name;
     WMB[modelName] = WMB.BaseModel.extend(modelObj);
@@ -36,9 +232,11 @@ $(function(){
     updated.model = WMB[modelName];
     updated.name = name; // name + "s"; // don't use plural names for the collection data store so that it can use the same as the Model
     var collectionName = modelName + "Collection";
+    updated.collectionName = collectionName;
+    var pluralName = modelName + "s";
+    updated.pluralName = pluralName;
     WMB[collectionName] = WMB.BaseCollection.extend(updated);
     // create an instanciation of the Collection
-    var pluralName = modelName + "s";
     WMB[pluralName] = new WMB[collectionName];
     WMB[pluralName].fetch();
   }
@@ -131,7 +329,7 @@ $(function(){
   WMB.createModel('bike', {
     initialize: function() {
       // standard init stuff every model needs
-      var modelName = this.name.charAt(0).toLocaleUpperCase() + this.name.substring(1).toLocaleLowerCase();
+      var modelName = WMB.capitalize(this.name);
       var pluralName = modelName + "s";
       this.collection = WMB[pluralName];
       
@@ -142,6 +340,17 @@ $(function(){
           return lock.get("bike_id") === id;
         })
       };
+      
+      var rowViewName = modelName + 'Row';
+      this.view = new WMB[rowViewName]({
+        model: this,
+        id: this.name + '-row-' + this.id
+      });
+      var saveViewName = modelName + 'Save';
+      this.saveView = new WMB[saveViewName]({
+        model: this,
+        id: this.name + '-save-' + this.id
+      });
     },
     setLock: function setLock(lock) {
       lock.set({bike_id: this.get("id")});
@@ -190,7 +399,7 @@ $(function(){
       'case': ""
     },
     initialize: function initialize() {
-      var modelName = this.name.charAt(0).toLocaleUpperCase() + this.name.substring(1).toLocaleLowerCase();
+      var modelName = WMB.capitalize(this.name);
       var pluralName = modelName + "s";
       this.collection = WMB[pluralName];
 
@@ -243,7 +452,7 @@ $(function(){
       // 'lastparked': new Date()
     },
     initialize: function initialize() {
-      var modelName = this.name.charAt(0).toLocaleUpperCase() + this.name.substring(1).toLocaleLowerCase();
+      var modelName = WMB.capitalize(this.name);
       var pluralName = modelName + "s";
       this.collection = WMB[pluralName];
 
@@ -313,7 +522,7 @@ $(function(){
       'description': "",
     },
     initialize: function initialize() {
-      var modelName = this.name.charAt(0).toLocaleUpperCase() + this.name.substring(1).toLocaleLowerCase();
+      var modelName = WMB.capitalize(this.name);
       var pluralName = modelName + "s";
       this.collection = WMB[pluralName];
       
@@ -352,7 +561,7 @@ $(function(){
       'description': ""
     },
     initialize: function initialize() {
-      var modelName = this.name.charAt(0).toLocaleUpperCase() + this.name.substring(1).toLocaleLowerCase();
+      var modelName = WMB.capitalize(this.name);
       var pluralName = modelName + "s";
       this.collection = WMB[pluralName];
       
