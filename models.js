@@ -396,7 +396,9 @@ $(function(){
     'defaults': {
       // 'time': new Date(),
       'description': "",
-      'case': ""
+      'case': "",
+      'found': null,
+      'givenUp': false
     },
     initialize: function initialize() {
       var modelName = WMB.capitalize(this.name);

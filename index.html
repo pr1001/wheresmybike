@@ -16,14 +16,29 @@
 		<script type="text/javascript" src="backbone-min.js"></script>
 		<script type="text/javascript" src="backbone-localstorage.js"></script>
 		<script type="text/javascript" src="models.js"></script>
+		<script type="text/javascript" src="pointy.js"></script>
+		<script type="text/javascript" src="linkedlist.js"></script>
 		<script type="text/javascript" src="app.js"></script>
 		
 		<style type="text/css">
+  		body {
+    		color: white;
+    		background-color: #FF001B;
+  		}
   		header h1, footer p {
     		margin-left: auto;
     		margin-right: auto;
     		text-align: center;
   		}
+  		.page {
+        position:absolute;
+        left:100%;      
+        -webkit-transition:1s left;
+        transition:1s left;
+      }      
+      .page.selected {
+        left: 0;
+      }
 		</style>
 	</head>
 	<body>
@@ -31,6 +46,17 @@
     	<h1>Where's My Bike?</h1>
   	</header>
   	<article>
+    	<div id="first_register_view" class="page selected">
+      	You need to register.
+      	<a href="#" onclick="$('#first_register_view').toggleClass('selected'); $('#register_view').toggleClass('selected'); return false;">Register</a>
+    	</div>
+    	<div id="register_view" class="page"></div>
+    	<div id="home_view" class="page">
+      	<img id="home_bike" />
+    	</div>
+    	<div id="engraving_view" class="page">engraving</div>
+    	<div id="find_view" class="page">find</div>
+    	<div id="missing_home_view" class="page">missing</div>    	
   	</article>
   	<footer>
     	<p>
