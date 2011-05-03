@@ -2,8 +2,8 @@
 <html>
 	<head>
 		<title>WMB?</title>
-		<link rel="apple-touch-icon" href="apple-touch-icon.png" />
-		<link rel="apple-touch-icon" sizes="114x114" href="apple-touch-icon.png" />
+<!-- 		<link rel="apple-touch-icon" href="assets/heart_icon_57.png" /> -->
+		<link rel="apple-touch-icon-precomposed" sizes="114x114" href="assets/heart_icon_gradient_highlight.png" />
 		<link rel="apple-touch-startup-image" href="startup.png" />
 		<!-- <link rel="apple-touch-startup-image" sizes="640x960" href="startup@2x.png" /> -->
 		<meta name="apple-mobile-web-app-capable" content="yes" />
@@ -16,14 +16,18 @@
 		<script type="text/javascript" src="backbone-min.js"></script>
 		<script type="text/javascript" src="backbone-localstorage.js"></script>
 		<script type="text/javascript" src="models.js"></script>
-		<script type="text/javascript" src="pointy.js"></script>
-		<script type="text/javascript" src="linkedlist.js"></script>
+		<script type="text/javascript" src="pointyjs/pointy.js"></script>
+		<script type="text/javascript" src="pointyjs/linkedlist.js"></script>
 		<script type="text/javascript" src="app.js"></script>
 		
 		<style type="text/css">
   		body {
     		color: white;
     		background-color: #FF001B;
+    		font-family: Helvetica;
+  		}
+  		button {
+    		font-family: Helvetica;
   		}
   		header h1, footer p {
     		margin-left: auto;
@@ -35,32 +39,167 @@
         left:100%;      
         -webkit-transition:1s left;
         transition:1s left;
+        display: none;
       }      
       .page.selected {
         left: 0;
+        display: block;
+      }
+      header {
+        width: 100%;
+        height: 60px;
+      }
+      article {
+        width: 100%;
+        height: 320px;
+      }
+      footer {
+        width: 100%;
+        height: 60px;
+      }
+      #home_bike_container {
+        width: 320px;
+        height: 260px;
+        background-repeat: no-repeat;
+        background-position: center top;
+        position: relative;
+      }
+      #home_bike_click_container {
+        position: absolute;
+        top: 50px;
+        left: 80px;
+        text-align: center;
+        color: grey;
+        font-size: 0.75em;
+      }
+      img.bike {
+        opacity: 0.8;
+      }
+      #bike_color_container {
+        width: 220px;
+        height: 96px;
+        margin: 10px;
+        overflow-x: auto;
+        overflow: hidden;
+        background-color: #FFF;
+        border-left: 10px solid #FFF;
+        border-top: 10px solid #FFF;
+        border-bottom: 10px solid #FFF;
+      }
+      #bike_color_picker {
+        width: 1400px;
+        position: relative;
+        left: 20px;
+      }
+      #bike_color_picker img {
+        margin-right: 10px;
+      }
+      #back_button, #edit_button {
+        display: none;
+      }
+      #home_buttons_container button {
+        background-color: #0094DE;
+        color: #FFF;
+        border: solid 5px white;
+        border-radius: 10px;
+      }
+      #home_buttons_good, #home_buttons_bad {
+        display: none;
+      }
+      #find_bike_button {
+        margin-left: 20px;
+        margin-right: 20px;
+        width: 280px;
+        height: 60px;
+        font-size: 2em;
+      }
+      #update_incident_button, #found_bike_button {
+        height: 60px;
+        font-size: 2em;
+        display: block;
+        float: left;
+      }
+      #update_incident_button {
+        margin-left: 20px;
+        margin-right: 10px;
+        width: 130px;
+      }
+      #found_bike_button {
+        margin-left: 10px;
+        margin-right: 20px;
+        width: 130px;
+      }
+      #find_view ul {
+        padding: 0px;
+        height: 280px;
+      }
+      #find_view li {
+        list-style-type: none;
+        width: 100%;
+        border-top: solid 1px gray;
+        height: 63px;
+        font-size: 1.5em;
+      }
+      #find_view li:first-child {
+        border-top: none;
       }
 		</style>
 	</head>
 	<body>
   	<header>
+    	<div style="float: left;">
+      	<button id="back_button">Back</button>
+    	</div>
+    	<div style="float: right;">
+      	<button id="edit_button">Edit</button>
+    	</div>
     	<h1>Where's My Bike?</h1>
   	</header>
   	<article>
     	<div id="first_register_view" class="page selected">
       	You need to register.
-      	<a href="#" onclick="$('#first_register_view').toggleClass('selected'); $('#register_view').toggleClass('selected'); return false;">Register</a>
+      	<a href="#" onclick="WMB.showView(WMB.theViews['register']);">Register</a>
     	</div>
     	<div id="register_view" class="page"></div>
     	<div id="home_view" class="page">
-      	<img id="home_bike" />
+      	<div id="home_bike_container">
+        	<div id="home_bike_click_container" onclick="WMB.showView(WMB.theViews['register']);">
+          	<img id="home_bike" class="bike" /><br />
+          	Touch to edit.
+        	</div>
+      	</div>
+      	<div id="home_buttons_container">
+        	<div id="home_buttons_good">
+          	<button id="find_bike_button" onclick="WMB.showView(WMB.theViews['find']);">Find My Bike</button>
+        	</div>
+        	<div id="home_buttons_bad">
+          	<button id="update_incident_button" onclick="WMB.showView(WMB.theViews['find']);">Find</button>
+          	<button id="found_bike_button" onclick="WMB.bikeFound();">Found!</button>
+        	</div>
+      	</div>
     	</div>
-    	<div id="engraving_view" class="page">engraving</div>
-    	<div id="find_view" class="page">find</div>
-    	<div id="missing_home_view" class="page">missing</div>    	
+    	<div id="engraving_view" class="page">
+      	<p>You can get your bike engraved and registered with AFAC, the city's department responsible for bikes.</p>
+      	<ul id="engraving_times_list" style="overflow: none;">
+      	</ul>
+    	</div>
+    	<div id="engraving_times_view" class="page">update incident</div>
+    	<div id="find_view" class="page">
+      	<ul>
+        	<li>At AFAC: <span id="find_afac_indicator">?</span></li>
+        	<li>Ask friends: <a id="facebook_share_link" href="http://www.facebook.com/connect/prompt_feed.php?&message=Has%20anyone%20seen%20my%20bike%3F%20It's%20missing!%20%23wheresmybike">Facebook</a> <a id="twitter_share_link" href="https://twitter.com/?status=Has%20anyone%20seen%20my%20bike%3F%20It's%20missing!%20%23wheresmybike">Twitter</a></li>
+        	<li>- OR -</li>
+        	<li><a href="tel:+31203344522">Call AFAC</a></li>
+        	<li><a href="#" onclick="WMB.showView(WMB.theViews['police']);">Contact the Police</a></li>
+      	</ul>
+    	</div>
+    	<div id="police_view" class="page">police</div>
+    	<div id="update_incident_view" class="page">update incident</div>
   	</article>
   	<footer>
     	<p>
-      	By <a href="http://www.bubblefoundry.com">Bubble Foundry</a>.
+      	By <a href="http://www.bubblefoundry.com">Peter Robinett</a> (<a href="http://twitter.com/pr1001">@pr1001</a>).<br>
+      	Design by Alexander Zeh (<a href="http://twitter.com/dmos23">@dmos</a>).
     	</p>
   	</footer>
 	</body>

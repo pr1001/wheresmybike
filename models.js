@@ -374,7 +374,7 @@ $(function(){
       'manufacturer': '',
       'model': '',
       'year': (new Date().getFullYear()), // NB: This is only executed once, when the file is loaded.
-      'color': '',
+      'color': 'black',
       // locks
       'frame': '',
       'engraving': '',
@@ -426,6 +426,9 @@ $(function(){
     parse: function parse(response) {
       // recreate the Date object
       response.time = new Date(response.time);
+      if (response.found) {
+        response.found = new Date(response.found);
+      }
       return response;
     }
   }, {
