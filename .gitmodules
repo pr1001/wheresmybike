@@ -1,0 +1,3 @@
+[submodule "pointyjs"]
+	path = pointyjs
+	url = git://github.com/pr1001/pointy.js.git
