@@ -19,6 +19,12 @@
 		<script type="text/javascript" src="pointyjs/linkedlist.js"></script>
 		<script type="text/javascript" src="app.js"></script>
 		
+		<script type="text/javascript">
+  		function BlockMove(event) {
+        event.preventDefault() ;
+      }
+		</script>
+		
 		<style type="text/css">
   		body {
     		color: white;
@@ -257,7 +263,7 @@
       }
 		</style>
 	</head>
-	<body>
+	<body ontouchmove="BlockMove(event);">
   	<header>
     	<button id="back_button"></button>
     	<h1>Where's My Bike?</h1>
