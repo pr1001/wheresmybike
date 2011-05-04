@@ -2,16 +2,15 @@
 <html>
 	<head>
 		<title>WMB?</title>
-<!-- 		<link rel="apple-touch-icon" href="assets/heart_icon_57.png" /> -->
 		<link rel="apple-touch-icon-precomposed" sizes="114x114" href="assets/heart_icon_gradient_highlight.png" />
 		<link rel="apple-touch-startup-image" href="assets/loading.png" />
-		<!-- <link rel="apple-touch-startup-image" sizes="640x960" href="startup@2x.png" /> -->
 		<meta name="apple-mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-status-bar-style" content="black">
 		<meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.0, maximum-scale = 1.0" />
 		<!-- window.navigator.standalone == true means fullscreen -->
 		
 		<script type="text/javascript" src="zepto.min.js"></script>
+		<script type="text/javascript" src="touch.js"></script>
 		<script type="text/javascript" src="underscore-min.js"></script>
 		<script type="text/javascript" src="backbone-min.js"></script>
 		<script type="text/javascript" src="backbone-localstorage.js"></script>
@@ -29,11 +28,35 @@
   		button {
     		font-family: Helvetica;
   		}
-  		header h1, footer p {
+  		h1, button {
+        font-size: 20px;
+        font-weight: bold;
+  		}
+  		footer p {
     		margin-left: auto;
     		margin-right: auto;
     		text-align: center;
   		}
+  		header h1 {
+    		margin-top: 0px;
+    		margin-bottom: 0px;
+    		padding-top: 3px;
+    		position: absolute;
+    		left: 60px;
+    		width: 200px;
+    		text-align: center;
+  		}
+  		#back_button {
+        display: none;
+      }
+      #back_button {
+        background-image: url(assets/backbtn.png);
+        background-color: transparent;
+        border: none;
+        position: absolute;
+        width: 50px;
+        height: 30px;
+      }
   		.page {
         position:absolute;
         left:100%;      
@@ -47,7 +70,7 @@
       }
       header {
         width: 100%;
-        height: 60px;
+        height: 40px;
       }
       article {
         width: 100%;
@@ -56,15 +79,16 @@
       footer {
         width: 100%;
         height: 60px;
+        margin-top: 10px;
       }
-      #home_bike_container {
+      .home_bike_container {
         width: 320px;
-        height: 260px;
+        height: 250px;
         background-repeat: no-repeat;
         background-position: center top;
         position: relative;
       }
-      #home_bike_click_container {
+      .home_bike_click_container {
         position: absolute;
         top: 50px;
         left: 80px;
@@ -72,50 +96,100 @@
         color: grey;
         font-size: 0.75em;
       }
+      #first_register_view img {
+        opacity: 1.0;
+      }
       img.bike {
         opacity: 0.8;
       }
+      #register_view h2, #engraving_view h2, #find_view h2 {
+        font-size: 16px;
+        margin-left: 16px;
+        margin-top: 0px;
+        margin-bottom: 5px;
+      }
+      ul.listBubble {
+        background-color: #FFF;
+        color: #0094DE;
+        font-weight: bold;
+        font-size: 13px;
+        border-radius: 5px;
+        border: 1px solid gray;
+        padding-left: 0px;
+        margin-left: 10px;
+        margin-right: 10px;
+        margin-top: 5px;
+        margin-bottom: 5px;
+        width: 300px;
+      }
+      .listBubble li {
+        list-style-type: none;
+        border-top: 1px solid gray;
+        padding: 5px;
+      }
+      .listBubble li:first-child {
+        border-top: none;
+      }
+      .listBubble label {
+        display: inline-block;
+        width: 90px;
+      }
+      .listBubble input, .listBubble select {
+        font-size: 16px;
+        font-weight: bold;
+      }
+      .listBubble input {
+        width: 180px;
+      }
+      .listBubble select {
+        width: 200px;
+      }
       #bike_color_container {
-        width: 220px;
+        width: 295px;
         height: 96px;
-        margin: 10px;
         overflow-x: auto;
         overflow: hidden;
         background-color: #FFF;
-        border-left: 10px solid #FFF;
+/*         border-left: 10px solid #FFF; */
         border-top: 10px solid #FFF;
         border-bottom: 10px solid #FFF;
       }
       #bike_color_picker {
         width: 1400px;
         position: relative;
-        left: 20px;
+        left: 127px;
       }
       #bike_color_picker img {
         margin-right: 10px;
       }
-      #back_button, #edit_button {
-        display: none;
-      }
-      #home_buttons_container button {
+      button#register_button, #home_buttons_container button, #register_view input[type=submit], #engraving_view button {
         background-color: #0094DE;
         color: #FFF;
         border: solid 5px white;
         border-radius: 10px;
       }
+      #register_view input[type=submit], #engraving_view button {
+        border-radius: 5px;
+        border: 2px solid #FFF;
+        font-size: 15px;
+        font-weight: bold;
+        -webkit-appearance: none;
+        margin-left: 11px;
+        margin-top: 5px;
+        padding: 5px;
+      }
       #home_buttons_good, #home_buttons_bad {
         display: none;
       }
-      #find_bike_button {
-        margin-left: 20px;
-        margin-right: 20px;
-        width: 280px;
+      #register_button,  #find_bike_button {
+        margin-left: 10px;
+        margin-right: 10px;
+        width: 300px;
         height: 60px;
-        font-size: 2em;
       }
       #update_incident_button, #found_bike_button {
         height: 60px;
-        font-size: 2em;
+        font-size: 20px;
         display: block;
         float: left;
       }
@@ -129,6 +203,7 @@
         margin-right: 20px;
         width: 130px;
       }
+/*
       #find_view ul {
         padding: 0px;
         height: 280px;
@@ -143,27 +218,63 @@
       #find_view li:first-child {
         border-top: none;
       }
+*/
+      #find_view li {
+        font-size: 16px;
+        font-weight: bold;
+      }
+      #find_view li img {
+        float: right;
+        margin-left: 10px;
+      }
+      #find_afac_indicator {
+        float: right;
+        width: 28px;
+        height: 28px;
+      }
+      .callDiv {
+        margin-top: 10px;
+        margin-left: 10px;
+      }
+      #engraving_view .date, #engraving_view .name, #engraving_view .button {
+        display: inline-block;
+      }
+      #engraving_view span.date {
+        width: 55px;
+        color: gray;
+      }
+      #engraving_view span.name {
+        width: 185px;
+        font-size: 16px;
+        overflow-x: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      #engraving_view button.map {
+        width: 50px;
+        margin: 0px;
+        font-size: 12px;
+      }
 		</style>
 	</head>
 	<body>
   	<header>
-    	<div style="float: left;">
-      	<button id="back_button">Back</button>
-    	</div>
-    	<div style="float: right;">
-      	<button id="edit_button">Edit</button>
-    	</div>
+    	<button id="back_button"></button>
     	<h1>Where's My Bike?</h1>
   	</header>
   	<article>
     	<div id="first_register_view" class="page selected">
-      	You need to register.
-      	<a href="#" onclick="WMB.showView(WMB.theViews['register']);">Register</a>
+      	<div class="home_bike_container" style="background-image: url(assets/heart.png);">
+        	<div class="home_bike_click_container">
+          	<img class="bike" src="assets/bike_blue.png"><br />
+        	</div>
+      	</div>
+      	<button id="register_button" onclick="WMB.showView(WMB.theViews['register']);">Register</button>
     	</div>
     	<div id="register_view" class="page"></div>
     	<div id="home_view" class="page">
-      	<div id="home_bike_container">
-        	<div id="home_bike_click_container" onclick="WMB.showView(WMB.theViews['register']);">
+      	<div id="home_bike_container" class="home_bike_container">
+        	<div id="home_bike_click_container" class="home_bike_click_container" onclick="WMB.showView(WMB.theViews['register']);">
           	<img id="home_bike" class="bike" /><br />
           	Touch to edit.
         	</div>
@@ -179,28 +290,58 @@
       	</div>
     	</div>
     	<div id="engraving_view" class="page">
-      	<p>You can get your bike engraved and registered with AFAC, the city's department responsible for bikes.</p>
-      	<ul id="engraving_times_list" style="overflow: none;">
-      	</ul>
+      	<div>
+        	<h2>Engraving</h2>
+        	<ul class="listBubble">
+          	<li>
+            	You can get your bike engraved and registered for free with AFAC, the city's department for bikes. Engravings are done at a different location around the city each Wednesday from 10:00 to 15:30.
+          	</li>
+        	</ul>
+      	</div>
+      	<div>
+        	<h2>Upcoming</h2>
+        	<ul id="engraving_times_list" class="listBubble" style="overflow: none;">
+        	</ul>
+      	</div>
     	</div>
     	<div id="engraving_times_view" class="page">update incident</div>
     	<div id="find_view" class="page">
-      	<ul>
-        	<li>At AFAC: <span id="find_afac_indicator">?</span></li>
-        	<li>Ask friends: <a id="facebook_share_link" href="http://www.facebook.com/connect/prompt_feed.php?&message=Has%20anyone%20seen%20my%20bike%3F%20It's%20missing!%20%23wheresmybike">Facebook</a> <a id="twitter_share_link" href="https://twitter.com/?status=Has%20anyone%20seen%20my%20bike%3F%20It's%20missing!%20%23wheresmybike">Twitter</a></li>
-        	<li>- OR -</li>
-        	<li><a href="tel:+31203344522">Call AFAC</a></li>
-        	<li><a href="#" onclick="WMB.showView(WMB.theViews['police']);">Contact the Police</a></li>
-      	</ul>
+      	<div>
+        	<h2>AFAC</h2>
+        	<ul class="listBubble">
+          	<li style="height: 28px; line-height: 28px;">Good news, AFAC has your bike? <span id="find_afac_indicator">?</span></li>
+<!--             <li><a href="http://www.afac-amsterdam.nl/bikebase/page.php?id=8&category=item">Check using the web form</a></li> -->
+        	</ul>
+      	</div>
+      	<div class="callDiv">
+        	<a href="tel:+31203344522"><img src="assets/phone.png" alt="Call AFAC"></a>
+      	</div>
+      	<div>
+        	<h2>Friends</h2>
+        	<ul class="listBubble">
+          	<li style="height: 35px; line-height: 35px;">Ask: <a id="facebook_share_link" href="http://www.facebook.com/connect/prompt_feed.php?&message=Has%20anyone%20seen%20my%20bike%3F%20It's%20missing!%20%23wheresmybike"><img src="assets/FACEBOOK.png" alt="Facebook"></a> <a id="twitter_share_link" href="https://twitter.com/?status=Has%20anyone%20seen%20my%20bike%3F%20It's%20missing!%20%23wheresmybike"><img src="assets/TWITTER.png" alt="Twitter"></a></li>
+        	</ul>
+      	</div>
+      	<div>
+        	<h2>Police</h2>
+        	<ul class="listBubble">
+<!--           	<li>All webpages are in Dutch, so you may want to ask a friend to help you if your Dutch isn't so great.</li> -->
+            <li>Everything below is in Dutch.</li>
+<!--           	<li><a href="#" onclick="WMB.showView(WMB.theViews['police']);">Contact the Police</a></li> -->
+          	<li><a href="https://aangifte.politie.nl/e-aangifte/internetaction.do?_flowId=internet-flow&pleegPlaats=AMSTERDAM">Make an internet declaration</a></li>
+          	<li><a href="http://www.politie-amsterdam-amstelland.nl/get.cfm?id=491">Printable form of bike details needed</a></li>
+          	<li><a href="http://www.politie-amsterdam-amstelland.nl/get.cfm?id=580">Tips on making a telephone declaration</a></li>
+        	</ul>
+      	</div>
+      	<div class="callDiv">
+        	<a href="tel:09008844"><img src="assets/phone.png" alt="Call the Police"></a>
+      	</div>
     	</div>
     	<div id="police_view" class="page">police</div>
     	<div id="update_incident_view" class="page">update incident</div>
   	</article>
   	<footer>
-    	<p>
-      	By <a href="http://www.bubblefoundry.com">Peter Robinett</a> (<a href="http://twitter.com/pr1001">@pr1001</a>).<br>
-      	Design by Alexander Zeh (<a href="http://twitter.com/dmos23">@dmos</a>).
-    	</p>
+    	<img src="assets/add_to_home.png" alt="Add to Home">
   	</footer>
 	</body>
 </html>
